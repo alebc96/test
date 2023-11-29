@@ -1,0 +1,152 @@
+/**
+ * Este archivo NO HAY QUE MODIFICARLO.
+ * Para editar las configuración del módulo hay que editar:
+ * - gradle.properties para información del múdulo
+ * - dependencies.gradle: para las dependencias del proyecto
+ *
+ * Compilación e Instalación
+ * Para compilar e instalar el desarrollo tenemos que ejecutar las siguientes tareas:
+ * - clean build sourceJar publishToMavenLocal copyJarToLib (en ese orden)
+ *
+ * Publicación
+ * Para la publicación en el artifactory de sagasoluciones ejecutamos: publish
+ *
+ * */
+
+// Los plugins siempre lo primero
+plugins {
+    id "java"
+    id "maven-publish"
+    id "net.linguica.maven-settings" version "0.5"
+}
+
+repositories {
+    mavenLocal()
+    /*
+    maven {
+        url 'https://sagasoluciones.pkgs.visualstudio.com/_packaging/sagasoluciones/maven/v1'
+        name 'sagasoluciones'
+        authentication {
+            basic(BasicAuthentication)
+        }
+    }
+     */
+    maven { url "https://repo1.maven.org/maven2/" }
+    maven { url "https://maven.vaadin.com/vaadin-addons/" }
+    maven { url "https://repo.spring.io/plugins-release/" }
+    maven { url "https://maven.restlet.talend.com" }
+}
+
+// ------------------------------
+
+// Configuración para el JAR
+jar {
+    // Archivo manifest
+    manifest {
+        attributes "Product-Name": product_name, "Implementation-Title": module_name, "Implementation-Version": version_number, "OpenCms-Version": opencms_version, "Company": company_name, "Description": product_description, "Group-Id": group_id, "Artifact-Id": module_name
+    }
+    // Nombre y versión
+    archiveBaseName.set(jar_name)
+    archiveVersion.set(version_number)
+    archiveFileName = jar_name + ".jar"
+}
+
+// Group ID y versión del proyecto
+group 'com.saga.bop'
+version version_number
+
+// Versión de JAVA
+java {
+    sourceCompatibility = JavaVersion.toVersion(java_target_version)
+    targetCompatibility = JavaVersion.toVersion(java_target_compatibility)
+}
+
+// Encoding
+compileJava.options.encoding = encoding
+compileTestJava.options.encoding = encoding
+javadoc.options.encoding = encoding
+
+// Dependencias: delegamos esto en el archivo dependencies.gradle
+dependencies {
+    apply from: "dependencies.gradle"
+}
+
+// Carpetas de código
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src/main/java",
+                       "${module_project_path}${module_name}/test"
+            ]
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+// Copia del jar compilado a la carpeta lib del módulo
+task copyJarToLib(type: Copy) {
+    from "build/libs/${jar_name}.jar"
+    into "${module_project_path}${module_name}/lib"
+}
+
+// Otras tareas
+// Creación de un archivo jar con el código fuente
+task sourceJar(type: Jar) {
+    archiveClassifier.set("sources")
+    from sourceSets.main.allJava
+    archiveFileName = "${jar_name}-source.jar"
+}
+
+// Copia el jar con el código fuente a la carpeta 'src' del módulo
+task copySrcJarToLib(type: Copy) {
+    from "build/libs/${jar_name}-source.jar"
+    into "${module_project_path}${module_name}/src"
+}
+
+// Creación del JavaDoc
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set("javadoc")
+    from javadoc.destinationDir
+    archiveFileName = "${jar_name}-javadoc.jar"
+}
+
+// Copia el jar con el javaDoc fuente a la carpeta 'doc' del módulo
+task copyJavaDocToLib(type: Copy) {
+    from "build/libs/${jar_name}-javadoc.jar"
+    into "${module_project_path}${module_name}/doc"
+}
+
+task extractJarJavaDoc(type: Copy) {
+    from zipTree("${module_project_path}${module_name}/doc/${jar_name}-javadoc.jar") // Ruta al archivo JAR
+    into "${module_project_path}${module_name}/doc/javaDoc" // Ruta donde deseas extraer los archivos del JAR
+}
+
+// Publicación en artifact
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+        }
+    }
+    // Repositorio de publicación de DevOps
+    repositories {
+        maven {
+            url 'https://sagasoluciones.pkgs.visualstudio.com/_packaging/sagasoluciones/maven/v1'
+            name 'sagasoluciones'
+            authentication {
+                basic(BasicAuthentication)
+            }
+        }
+    }
+}

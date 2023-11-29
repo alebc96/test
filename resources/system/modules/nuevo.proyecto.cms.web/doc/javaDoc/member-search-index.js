@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"com.saga.proyecto.base","c":"HolaOpenCms","l":"HolaOpenCms()","url":"%3Cinit%3E()"},{"p":"com.saga.proyecto.base","c":"HolaOpenCms","l":"main(String[])","url":"main(java.lang.String[])"}]

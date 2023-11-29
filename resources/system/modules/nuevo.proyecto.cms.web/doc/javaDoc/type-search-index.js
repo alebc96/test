@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.saga.proyecto.base","l":"HolaOpenCms"}]
